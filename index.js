@@ -1,12 +1,12 @@
 // TODO: Auto variation?
-
 function gameBoard(){
   var controls = document.getElementById("controls")
   for (var i = 0; i < 8; i++) {
     for (var j = 0; j < 4; j++) {
+      var keyClasses = ['Q', 'W', 'E', 'R']
       var span = document.createElement('span');
       span.innerHTML = "||||||| "
-      span.setAttribute("class", `column-${i}`)
+      span.setAttribute("class", `column${keyClasses[j]}`)
       controls.append(span)
       if (j == 3) {
         controls.append('\n')
@@ -151,21 +151,79 @@ document.getElementById('music').addEventListener('click', ()=>{
       }
     }, (60/bpm)*1000);
 
-
+    document.addEventListener('keypress', checkKeyPress);
 
     document.getElementById('music').disabled = true
   }
 })
+var keys = []
+function checkKeyPress(key){
+  if (keys.includes(key.code)) {
+    console.log('ONE POINT');
+  } else {
+    console.log('MINUS POINT');
+  }
+}
 
-function updateGameBoard(patternStep) {
-  console.log(kickPattern[patternStep]);
-  var elems = Array.from(document.getElementsByClassName('q')).forEach((item, i) => {
-    if (kickPattern[patternStep] != 0) {
-      item.setAttribute("style", "background-color: blue;")
+function colourGameBoard(pattern, keyClass){
+  // find all the hits, we need this so we can start colouring ~ten before
+  var indices = [];
+  var boolPattern = pattern.map(e=>e != 0)
+  var idx = boolPattern.indexOf(true)
+  while (idx != -1) {
+    indices.push(idx);
+    idx = boolPattern.indexOf(true, idx + 1);
+  }
+  debugger
+  // This shows when it is hit, can you interp
+  // if (!indices[indices.indexOf(patternStep)) {
+  //
+  // }
+  if (indices[indices.indexOf(patternStep)] == patternStep) {
+    console.log('the drum is hit');
+  }
+  indices.forEach(idx => {
+
+    if (patternStep == (idx-8)) {
+      // console.log(idx);
+      // console.log(patternStep);
+      x = 0
+      let intervalID = window.setInterval(()=>{
+        colourLeadUp(keyClass)
+        if (++x === 4) {
+          // console.log('cleared');
+          window.clearInterval(intervalID);
+        }
+      }, 100)
+    }
+  })
+
+  var elems = Array.from(document.querySelectorAll(`#keys>.${keyClass}`)).forEach((item, i) => {
+    if (pattern[patternStep] != 0) {
+      item.setAttribute("style", `background-color: ${getComputedStyle(item).color};`)
+      keys.push(`Key${keyClass}`)
     } else {
-      item.setAttribute("style", "background-color: ;")
+      item.setAttribute("style", `background-color: none;`)
+      keys.splice(keys.indexOf(`Key${keyClass}`), 1);
     }
   });
+}
+
+function colourLeadUp(keyClass){
+  try {
+    document.querySelector(`.column${keyClass}:not(.${keyClass})`).setAttribute("class", `column${keyClass} ${keyClass}`)
+  } catch (e) {
+    Array.from(document.querySelectorAll(`.column${keyClass}.${keyClass}`)).forEach((item)=>{
+      item.setAttribute("class", `column${keyClass}`)
+    })
+  }
+}
+
+function updateGameBoard(patternStep) {
+  colourGameBoard(kickPattern, 'Q');
+  // colourGameBoard(snarePattern, 'W');
+  // colourGameBoard(hhPattern, 'E');
+  // colourGameBoard(bassPattern, 'R');
 }
 
 function update(progress) {
@@ -175,6 +233,7 @@ function update(progress) {
 function draw() {
   // Draw the state of the world
 }
+
 
 function loop(timestamp) {
   var progress = timestamp - lastRender
